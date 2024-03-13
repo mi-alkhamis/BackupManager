@@ -1,14 +1,13 @@
 from configparser import ConfigParser, Error
 from datetime import datetime
-from os import environ, pardir, path
-import sys
+import os, sys
 
 
 class Config:
     def __init__(self):
         self.config = ConfigParser()
-        self.config_file = path.abspath(
-            path.join(path.dirname(__file__), pardir, "config.ini")
+        self.config_file = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), os.pardir, "config.ini")
         )
         self.read_config(self.config_file)
 
@@ -29,13 +28,41 @@ class Config:
     def get(self, key, fallback=None, section="default"):
         return self.config.get(section, key, fallback=fallback)
 
+    def get_path(self, key, fallback=".", section="default"):
+        try:
+            path = self.config.get(section, key, fallback=fallback)
+            if os.path.exists(path):
+                return path
+            else:
+                raise FileNotFoundError
+        except ValueError as e:
+            print(f"Error: Invalid path for {key} in section {section}")
+            sys.exit()
+        except FileNotFoundError as e:
+            print(f"Error: '{path}' Path was not found! {key} in section {section}")
+            sys.exit()
+
+    def get_bolean(self, key, fallback=None, section="default"):
+        try:
+            return self.config.getboolean(section, key, fallback=fallback)
+        except ValueError as e:
+            print(f"Error: Invalid value for {key} in section {section}")
+            sys.exit()
+
+    def get_int(self, key, fallback=None, section="default"):
+        try:
+            return self.config.getint(section, key, fallback=fallback)
+        except ValueError as e:
+            print(f"Error: Invalid value for {key} in section {section}")
+            sys.exit()
+
     @property
     def backup_path(self):
-        return path.realpath(self.get("BACKUP_PATH"))
+        return os.path.realpath(self.get_path("BACKUP_PATH"))
 
     @property
     def san_drive(self):
-        return path.realpath(self.get("SAN_DRIVE"))
+        return os.path.realpath(self.get_path("SAN_DRIVE"))
 
     @property
     def exclude_path(self):
@@ -47,25 +74,19 @@ class Config:
 
     @property
     def disk_usage_percernt(self):
-        return int(self.get("DISK_USAGE_PERCENT"))
+        return self.get_int("DISK_USAGE_PERCENT")
 
     @property
     def months_to_keep(self):
-        return int(self.get("MONTHS_TO_KEEP"))
+        return self.get_int("MONTHS_TO_KEEP")
 
     @property
     def debug(self):
-        return bool(
-            (
-                self.get(
-                    "DEBUG",
-                )
-            )
-        )
+        return self.get_bolean("DEBUG")
 
     @property
     def log_path(self):
-        return path.realpath(self.get("LOG_PATH", fallback="./logs"))
+        return os.path.realpath(self.get_path("LOG_PATH", fallback="./logs"))
 
     @property
     def log_filename(self):
