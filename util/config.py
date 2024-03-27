@@ -1,5 +1,6 @@
 from configparser import ConfigParser, Error
 from datetime import datetime
+import coloredlogs, logging
 import os, sys
 
 
@@ -73,8 +74,12 @@ class Config:
             return exclude_path_items
 
     @property
-    def disk_usage_percernt(self):
-        return self.get_int("DISK_USAGE_PERCENT")
+    def backup_usage_percent(self):
+        return self.get_int("BACKUP_USAGE_PERCENT")
+
+    @property
+    def san_usage_percent(self):
+        return self.get_int("SAN_USAGE_PERCENT")
 
     @property
     def months_to_keep(self):
@@ -92,6 +97,59 @@ class Config:
     def log_filename(self):
         log_filename_date_format = "%d-%m-%Y"
         return f"BackupManager-{datetime.now().strftime(log_filename_date_format)}.log"
+
+    @property
+    def log_separator(self):
+        log_separator = "-" * 100
+        return log_separator
+
+    def logging(self):
+        logger = logging.getLogger(__name__)
+        try:
+            os.makedirs(config.log_path, exist_ok=True)
+        except PermissionError as e:
+            print(
+                f"Error: Permission denied while creating log directory at {config.log_path}"
+            )
+            sys.exit(1)
+        except OSError as e:
+            print(
+                f"Error: An OS error occurred while creating log directory at {config.log_path}: {e}"
+            )
+            sys.exit(1)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            sys.exit(1)
+
+        log_path = os.path.join(config.log_path, config.log_filename)
+        file_handler = logging.FileHandler(log_path)
+        formatter = logging.Formatter(
+            fmt="%(asctime)s [%(levelname)s] - %(message)s", datefmt=self.date_format
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logging.basicConfig(
+            level=logging.DEBUG,
+        )
+        levelstyles = {
+            "critical": {"bold": True, "color": "red"},
+            "debug": {"color": "magenta"},
+            "error": {"color": "red"},
+            "info": {"color": "green"},
+            "warning": {"color": "yellow"},
+        }
+        coloredlogs.install(
+            logger=logger,
+            fmt="%(message)s",
+            level=logging.DEBUG,
+            level_styles=levelstyles,
+        )
+        return logger
+
+    @property
+    def date_format(self):
+        date_format = "%d-%m-%Y %H:%M:%S"
+        return date_format
 
 
 config = Config()
