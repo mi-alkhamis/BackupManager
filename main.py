@@ -3,6 +3,8 @@ from os.path import splitdrive, join, dirname, getsize
 from shutil import disk_usage, move, copy2
 from time import strftime, time
 from util import Config, byte_to_gb, percent
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
 
 
 def backup_drive_calc():
@@ -137,6 +139,78 @@ def move_files(source, dest):
     )
 
 
+def calc_preserved_days(filedate):
+    last_day = datetime(filedate.year, filedate.month, 1) + relativedelta(
+        months=1, days=-1
+    )
+    first_day = 1
+    fifteen_day = 15
+    days_to_keep_files = [first_day, fifteen_day, last_day.day]
+    return days_to_keep_files
+
+
+def clean(folder_path):
+    """
+    Clean up outdated files in the specified folder.
+
+    This function deletes files in the given folder that were not modified on the 1st,
+    15th, or last day of the month within the configured number of months to keep.
+
+    Args:
+        folder_path (str): The path of the folder to clean up.
+
+    Returns:
+        None
+    """
+    start_time, total_size, files_deleted = time(), 0, 0
+    for root_dir, sub_dirs, files in walk(folder_path):
+        sub_dirs[:] = [d for d in sub_dirs if d.lower() not in config.exclude_path]
+        for file in files:
+            file_path = join(root_dir, file)
+            try:
+                file_modify_date = datetime.fromtimestamp(
+                    path.getmtime(file_path)
+                ).date()
+            except OSError as e:
+                logger.error(f"Unable to get modification date: {e}")
+                continue
+
+            days_to_keep_files = calc_preserved_days(file_modify_date)
+            current_date = datetime.today().date()
+            if file_modify_date.day not in days_to_keep_files:
+                if file_modify_date < (
+                    current_date - relativedelta(month=config.months_to_keep)
+                ):
+                    try:
+                        file_size = path.getsize(file_path)
+                        remove(file_path)
+                    except PermissionError as e:
+                        logger.error(f"Permission denied: Unable to delete file. {e}")
+                        continue
+                    except FileNotFoundError as e:
+                        print(
+                            f"File not found: The file '{file_path}' does not exist. {e}"
+                        )
+                        continue
+                    except IsADirectoryError as e:
+                        logger.error(
+                            f"Is a directory: {file_path}. unable to delete dir. {e}"
+                        )
+                        continue
+                    except OSError as e:
+                        logger.error(f"Unable to delete file: {e}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"Unexpected error while deleting file. {e}")
+                        continue
+                    total_size += file_size
+                    logger.info(f"File {file_path} has been deleted.")
+                    files_deleted = files_deleted + 1
+    run_time = time() - start_time
+    total_size = byte_to_gb(total_size)
+    logger.info(f"{files_deleted} files deleted, total size {total_size} GB,")
+
+
 def main():
     logger.debug(config.log_separator)
     logger.debug(f"BackupManager's starting at {strftime(config.date_format)}")
@@ -146,10 +220,16 @@ def main():
         backup_usage.used < san_usage.free
     ):
         move_files(config.backup_path, config.san_drive)
+    elif san_usage_percent > config.san_usage_percent:
+        clean(config.san_drive)
+    elif (backup_usage_percent > config.backup_usage_percent) and (
+        backup_usage.used > san_usage.free
+    ):
+        clean(config.san_drive)
+        move_files(config.backup_path, config.san_drive)
     else:
         logger.info("Backup in right condition...")
-
-    logger.debug(f"BackupManager's ending at {strftime(config.date_format)}")
+        logger.debug(f"BackupManager's ending at {strftime(config.date_format)}")
 
 
 if __name__ == "__main__":
