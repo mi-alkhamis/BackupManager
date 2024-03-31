@@ -5,6 +5,7 @@ from time import strftime, time
 from util import Config, byte_to_gb, percent
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+import signal, readchar
 
 
 def backup_drive_calc():
@@ -123,7 +124,7 @@ def move_files(source, dest):
                 move(source_file, dest_file, copy_function=copy2)
             except PermissionError as e:
                 logger.error(
-                    f"Unbale to move file, Premission Denied {e.filename},{err=}"
+                    f"Unbale to move file, Premission Denied {e.filename}. {e}"
                 )
                 continue
             except Exception as e:
@@ -232,7 +233,33 @@ def main():
         logger.debug(f"BackupManager's ending at {strftime(config.date_format)}")
 
 
+def exit_handler(signum, frame):
+    """
+    Handle the exit signal by asking the user for confirmation.
+
+    Args:
+        signum (int): The signal number.
+        frame (frame object): The current stack frame.
+
+    Returns:
+        None
+    """
+    messsage = "Ctrl+C was pressed. Do you really want to exit? y/n "
+    print(messsage, end="", flush=True)
+    respond = readchar.readchar()
+    while readchar.readchar() != b"\n":
+        pass
+    if respond == "y":
+        print("")
+        exit(1)
+    else:
+        print("", end="\r", flush=True)
+        print(" " * len(messsage), end="", flush=True)
+        print("    ", end="\r", flush=True)
+
+
 if __name__ == "__main__":
     config = Config()
     logger = config.logging()
+    signal.signal(signal.SIGINT, exit_handler)
     main()
