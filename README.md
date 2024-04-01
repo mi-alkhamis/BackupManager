@@ -26,9 +26,20 @@ The Backup Manager is a Python script designed to automate backup operations and
 
       - Navigate to the project directory:
           ```shell
-          cd backup-manager
+          cd BackupManager
           ```
-
+      - create a new virtual environment named `env`:
+          ```bash
+          python3 -m venv env
+          ```
+      - Activate the virtual environment. On Windows, run:
+          ```bash
+          .\env\Scripts\activate
+          ```
+          On macOS and Linux, run:
+          ```bash
+          source env/bin/activate
+          ```
       - Install Python dependencies using pip:
           ```shell
           pip install -r requirements.txt
@@ -38,12 +49,12 @@ The Backup Manager is a Python script designed to automate backup operations and
       - Modify the config.ini file to set up paths, exclusion criteria, retention periods, and logging configurations as per your requirements.
           ```ini
           [default]
-          BACKUP_PATH=/home/user/backup
+          BACKUP_PATH=/mnt/backup_location
           SAN_DRIVE=/mnt/san_drive
           BACKUP_USAGE_PERCENT=70
           SAN_USAGE_PERCENT=80
           MONTHS_TO_KEEP=6
-          DEBUG=0
+          DEBUG=1
           LOG_PATH=/var/log/backup_manager
           EXCLUDE_PATH=tmp,cache
           ```
@@ -57,14 +68,8 @@ The Backup Manager is a Python script designed to automate backup operations and
 
       - The script will calculate disk usage, perform file operations, and clean up outdated files based on the configured settings.
 
-## Dependencies
-  - Python 3.x
-  - coloredlogs (for colored console logging)
-  - dateutil (for handling dates and times)
-  - readchar (for reading characters from the terminal)
-
 ## Logging
-  - The Backup Manager logs its activities to a log file named BackupManager-<date>.log in the specified log directory.
+  - The Backup Manager logs its activities to a log file named BackupManager-<date>.log in the specified LOG_PATH directory.
   - Log entries include timestamps, log levels (e.g., INFO, WARNING, ERROR), and descriptive messages about the script's operations.
 
 ## Contributing
