@@ -34,28 +34,31 @@ class Config:
             path = self.config.get(section, key, fallback=fallback)
             if os.path.exists(path):
                 return path
-            else:
-                raise FileNotFoundError
+            os.mkdir(path)
+            return path
         except ValueError as e:
             print(f"Error: Invalid path for {key} in section {section}")
-            sys.exit()
+            sys.exit(1)
         except FileNotFoundError as e:
             print(f"Error: '{path}' Path was not found! {key} in section {section}")
-            sys.exit()
+            sys.exit(1)
+        except PermissionError as e:
+            print(f"Error: Permission Denied. Unable to create {path}")
+            sys.exit(1)
 
     def get_bolean(self, key, fallback=None, section="default"):
         try:
             return self.config.getboolean(section, key, fallback=fallback)
         except ValueError as e:
             print(f"Error: Invalid value for {key} in section {section}")
-            sys.exit()
+            sys.exit(1)
 
     def get_int(self, key, fallback=None, section="default"):
         try:
             return self.config.getint(section, key, fallback=fallback)
         except ValueError as e:
             print(f"Error: Invalid value for {key} in section {section}")
-            sys.exit()
+            sys.exit(1)
 
     @property
     def backup_path(self):
