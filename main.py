@@ -221,16 +221,23 @@ def main():
         backup_usage.used < san_usage.free
     ):
         move_files(config.backup_path, config.san_drive)
+        input()
+
     elif san_usage_percent > config.san_usage_percent:
         clean(config.san_drive)
+        input()
+
     elif (backup_usage_percent > config.backup_usage_percent) and (
         backup_usage.used > san_usage.free
     ):
         clean(config.san_drive)
         move_files(config.backup_path, config.san_drive)
+        input()
+
     else:
         logger.info("Backup in right condition...")
         logger.debug(f"BackupManager's ending at {strftime(config.date_format)}")
+        input()
 
 
 def exit_handler(signum, frame):
