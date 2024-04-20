@@ -178,35 +178,32 @@ def clean(folder_path):
 
             days_to_keep_files = calc_preserved_days(file_modify_date)
             current_date = datetime.today().date()
-            if file_modify_date.day not in days_to_keep_files:
-                if file_modify_date < (
-                    current_date - relativedelta(month=config.months_to_keep)
-                ):
-                    try:
-                        file_size = path.getsize(file_path)
-                        remove(file_path)
-                    except PermissionError as e:
-                        logger.error(f"Permission denied: Unable to delete file. {e}")
-                        continue
-                    except FileNotFoundError as e:
-                        print(
-                            f"File not found: The file '{file_path}' does not exist. {e}"
-                        )
-                        continue
-                    except IsADirectoryError as e:
-                        logger.error(
-                            f"Is a directory: {file_path}. unable to delete dir. {e}"
-                        )
-                        continue
-                    except OSError as e:
-                        logger.error(f"Unable to delete file: {e}")
-                        continue
-                    except Exception as e:
-                        logger.error(f"Unexpected error while deleting file. {e}")
-                        continue
-                    total_size += file_size
-                    logger.info(f"File {file_path} has been deleted.")
-                    files_deleted = files_deleted + 1
+            if file_modify_date.day not in days_to_keep_files and file_modify_date < (
+                current_date - relativedelta(months=config.months_to_keep)
+            ):
+                try:
+                    file_size = path.getsize(file_path)
+                    remove(file_path)
+                except PermissionError as e:
+                    logger.error(f"Permission denied: Unable to delete file. {e}")
+                    continue
+                except FileNotFoundError as e:
+                    print(f"File not found: The file '{file_path}' does not exist. {e}")
+                    continue
+                except IsADirectoryError as e:
+                    logger.error(
+                        f"Is a directory: {file_path}. unable to delete dir. {e}"
+                    )
+                    continue
+                except OSError as e:
+                    logger.error(f"Unable to delete file: {e}")
+                    continue
+                except Exception as e:
+                    logger.error(f"Unexpected error while deleting file. {e}")
+                    continue
+                total_size += file_size
+                logger.info(f"File {file_path} has been deleted.")
+                files_deleted = files_deleted + 1
     run_time = time() - start_time
     total_size = byte_to_gb(total_size)
     logger.info(f"{files_deleted} files deleted, total size {total_size} GB,")
