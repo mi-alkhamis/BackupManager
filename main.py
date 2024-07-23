@@ -1,11 +1,15 @@
-from os import makedirs, remove, walk, path
-from os.path import splitdrive, join, dirname, getsize
-from shutil import disk_usage, move, copy2
-from time import strftime, time
-from util import Config, byte_to_gb, percent
-from dateutil.relativedelta import relativedelta
+import signal
+import sys
 from datetime import datetime
-import signal, readchar
+from os import makedirs, path, remove, walk
+from os.path import dirname, getsize, join, splitdrive
+from shutil import copy2, disk_usage, move
+from time import strftime, time
+
+import readchar
+from dateutil.relativedelta import relativedelta
+
+from util import Config, byte_to_gb, percent
 
 
 def backup_drive_calc():
@@ -145,8 +149,8 @@ def calc_preserved_days(filedate):
         months=1, days=-1
     )
     first_day = 1
-    fifteen_day = 15
-    days_to_keep_files = [first_day, fifteen_day, last_day.day]
+    fifteenth_day = 15
+    days_to_keep_files = [first_day, fifteenth_day, last_day.day]
     return days_to_keep_files
 
 
@@ -206,12 +210,18 @@ def clean(folder_path):
                 files_deleted = files_deleted + 1
     run_time = time() - start_time
     total_size = byte_to_gb(total_size)
-    logger.info(f"{files_deleted} files deleted, total size {total_size} GB,")
+    logger.info(
+        f"{files_deleted} files deleted, total size {total_size} GB,in {run_time/60:.2f} minutes"
+    )
 
 
 def main():
     logger.debug(config.log_separator)
     logger.debug(f"BackupManager's starting at {strftime(config.date_format)}")
+    manage_disk_usage()
+
+
+def manage_disk_usage():
     backup_usage_percent, backup_usage = backup_drive_calc()
     san_usage_percent, san_usage = san_drive_calc()
     if (backup_usage_percent > config.backup_usage_percent) and (
@@ -219,10 +229,13 @@ def main():
     ):
         move_files(config.backup_path, config.san_drive)
         input()
+        sys.exit(1)
 
     elif san_usage_percent > config.san_usage_percent:
         clean(config.san_drive)
+        manage_disk_usage()
         input()
+        sys.exit(1)
 
     elif (backup_usage_percent > config.backup_usage_percent) and (
         backup_usage.used > san_usage.free
@@ -230,11 +243,14 @@ def main():
         clean(config.san_drive)
         move_files(config.backup_path, config.san_drive)
         input()
+        sys.exit(1)
 
     else:
         logger.info("Backup in right condition...")
         logger.debug(f"BackupManager's ending at {strftime(config.date_format)}")
+        logger.debug(config.log_separator)
         input()
+        sys.exit(1)
 
 
 def exit_handler(signum, frame):
