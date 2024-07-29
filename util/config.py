@@ -1,7 +1,9 @@
+import logging
+import os
+import sys
 from configparser import ConfigParser, Error
 from datetime import datetime
-import coloredlogs, logging
-import os, sys
+import coloredlogs
 
 
 class Config:
