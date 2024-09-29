@@ -9,9 +9,11 @@ import coloredlogs
 class Config:
     def __init__(self):
         self.config = ConfigParser()
-        self.config_file = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), os.pardir, "config.ini")
-        )
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),os.pardir)
+        self.config_file = os.path.join(base_path, "config.ini")
         self.read_config(self.config_file)
 
     def read_config(self, config_path):
