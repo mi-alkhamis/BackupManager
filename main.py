@@ -5,10 +5,8 @@ from os import makedirs, path, remove, walk
 from os.path import dirname, getsize, join, splitdrive
 from shutil import copy2, disk_usage, move
 from time import strftime, time
-
 import readchar
 from dateutil.relativedelta import relativedelta
-
 from util import Config, byte_to_gb, percent
 
 
@@ -183,10 +181,10 @@ def clean(folder_path):
             days_to_keep_files = calc_preserved_days(file_modify_date)
             current_date = datetime.today().date()
             if file_modify_date.day not in days_to_keep_files and file_modify_date < (
-                current_date - relativedelta(months=config.months_to_keep)
+                current_date - relativedelta(days=config.days_to_keep)
             ):
+                file_size = path.getsize(file_path)
                 try:
-                    file_size = path.getsize(file_path)
                     remove(file_path)
                 except PermissionError as e:
                     logger.error(f"Permission denied: Unable to delete file. {e}")
@@ -214,15 +212,12 @@ def clean(folder_path):
         f"{files_deleted} files deleted, total size {total_size} GB,in {run_time/60:.2f} minutes"
     )
 
-
-def main():
-    logger.debug(config.log_separator)
-    logger.debug(f"BackupManager's starting at {strftime(config.date_format)}")
-    manage_disk_usage()
-
-
 def manage_disk_usage():
     backup_usage_percent, backup_usage = backup_drive_calc()
+    if config.san_status is False and backup_usage_percent > config.backup_usage_percent:
+        clean(config.backup_path)
+        sys.exit(1)
+
     san_usage_percent, san_usage = san_drive_calc()
     if (backup_usage_percent > config.backup_usage_percent) and (
         backup_usage.used < san_usage.free
@@ -277,6 +272,10 @@ def exit_handler(signum, frame):
         print(" " * len(messsage), end="", flush=True)
         print("    ", end="\r", flush=True)
 
+def main():
+    logger.debug(config.log_separator)
+    logger.debug(f"BackupManager's starting at {strftime(config.date_format)}")
+    manage_disk_usage()
 
 if __name__ == "__main__":
     config = Config()
