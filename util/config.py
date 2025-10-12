@@ -50,7 +50,7 @@ class Config:
             print(f"Error: Permission Denied. Unable to create {path}")
             sys.exit(1)
 
-    def get_bolean(self, key, fallback=None, section="default"):
+    def get_boolean(self, key, fallback=None, section="default"):
         try:
             return self.config.getboolean(section, key, fallback=fallback)
         except ValueError as e:
@@ -89,12 +89,19 @@ class Config:
         return self.get_int("SAN_USAGE_PERCENT")
 
     @property
-    def months_to_keep(self):
-        return self.get_int("MONTHS_TO_KEEP")
+    def days_to_keep(self):
+        return self.get_int("DAYS_TO_KEEP")
 
     @property
+    def days_on_month(self):
+        return self.get("DAYS_ON_MONTH")
+    @property
     def debug(self):
-        return self.get_bolean("DEBUG")
+        return self.get_boolean("DEBUG")
+
+    @property
+    def san_status(self):
+        return self.get_boolean("SAN")
 
     @property
     def log_path(self):
@@ -160,3 +167,4 @@ class Config:
 
 
 config = Config()
+

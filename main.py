@@ -143,13 +143,23 @@ def move_files(source, dest):
 
 
 def calc_preserved_days(filedate):
-    last_day = datetime(filedate.year, filedate.month, 1) + relativedelta(
-        months=1, days=-1
-    )
-    first_day = 1
-    fifteenth_day = 15
-    days_to_keep_files = [first_day, fifteenth_day, last_day.day]
-    return days_to_keep_files
+    if config.days_on_month == None:
+        last_day = datetime(filedate.year, filedate.month, 1) + relativedelta(
+            months=1, days=-1
+        )
+        first_day = 1
+        fifteenth_day = 15
+        days_to_keep_files = [first_day, fifteenth_day, last_day.day]
+        return days_to_keep_files
+    if type(config.days_on_month) is list:
+        days = config.days_on_month.split(",")
+        days_to_keep_files = []
+        for day in days:
+            if int(day) <= 31 and int(day) > 0:
+                days_to_keep_files.append(int(day))
+    else:
+         return [int(config.days_on_month)]
+
 
 
 def clean(folder_path):
